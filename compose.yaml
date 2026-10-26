@@ -1,0 +1,36 @@
+name: zain-store
+
+services:
+  zain-store-db:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-zain_store}
+      POSTGRES_USER: ${POSTGRES_USER:-zain_store}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zain_store}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  zain-store-web:
+    build: .
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
+    ports:
+      - "8010:8010"
+    # Keep credentials outside the repository. ../.env is the standard local
+    # configuration file; ../.env-stripe is an optional Stripe override file.
+    # Missing files are allowed so the built-in payment simulator runs locally.
+    env_file:
+      - path: ../.env
+        required: false
+      - path: ../.env-stripe
+        required: false
+    volumes:
+      - .:/app
+    depends_on:
+      zain-store-db:
+        condition: service_healthy
+volumes:
+  postgres_data:

@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% load money %}
+{% block title %}{{ product.name }} · Zain Store{% endblock %}
+{% block content %}
+<a href="{% url 'catalog:product_list' %}" class="nav-link-clean d-inline-block mb-4">← Back to collection</a><div class="row align-items-center g-4 g-lg-5"><div class="col-lg-7"><div class="panel overflow-hidden"><img src="{{ product.image_url }}" class="w-100" style="height:min(62vw,560px);object-fit:cover" alt="{{ product.name }}"></div></div><div class="col-lg-5"><p class="eyebrow mb-2">Zain Store essential</p><h1 class="display-5 fw-bold mb-3" style="letter-spacing:-.06em">{{ product.name }}</h1><p class="lead subtle mb-4">{{ product.description }}</p><div class="d-flex align-items-center justify-content-between py-3 border-top border-bottom mb-4"><span class="price">{{ product.price_cents|eur }}</span><span class="subtle small">Free shipping · VAT included</span></div><form method="post" action="{% url 'cart:add' product.id %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'cart:detail' %}"><button class="btn btn-dark btn-lg w-100">Add to cart <span class="ms-1">→</span></button></form><p class="text-center subtle small mt-3 mb-0">Secure checkout with Stripe test mode or demo simulator.</p></div></div>
+{% endblock %}

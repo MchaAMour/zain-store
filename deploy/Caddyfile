@@ -1,0 +1,7 @@
+# Replace demo.example.com with the actual demo subdomain.
+# Caddy obtains and renews HTTPS certificates automatically when DNS and ports
+# 80/443 are correctly configured.
+demo.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8010
+}
