@@ -50,4 +50,3 @@ Use the printed `whsec_...` value in the same environment file and restart the `
 - A late failure cannot overwrite a successful payment.
 - Django admin exposes orders, payments, and the internal event timeline.
 
-`plan.md` documents the accepted scope and deliberate non-goals.

@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+!.env.example
+!.env.vps.example
+__pycache__
+*.py[cod]
+.venv
+staticfiles
+postgres_data
+docs
+*.pdf
+*.docx
