@@ -1,0 +1,23 @@
+# Run behind a reverse proxy that already owns ports 80/443 (for example a shared Caddy):
+#
+#   docker compose --env-file .env -f compose.vps.yaml -f compose.edge.yaml up -d --build
+#
+# The web container joins the proxy's Docker network as `zain-store-web` and publishes nothing on
+# the host. Set EDGE_NETWORK in .env to that network's name, and route the domain to
+# `zain-store-web:8010` in the proxy.
+
+# A separate project (containers, network, database volume) from the local `zain-store` stack.
+name: zain-store-prod
+
+services:
+  zain-store-web:
+    ports: !reset []
+    networks:
+      default: {}
+      edge:
+        aliases: [zain-store-web]
+
+networks:
+  edge:
+    name: ${EDGE_NETWORK:-edge}
+    external: true
