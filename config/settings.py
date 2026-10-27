@@ -63,3 +63,14 @@ if not DEBUG:
     CSRF_TRUSTED_ORIGINS = [origin for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin]
     if os.getenv("BEHIND_HTTPS_PROXY", "false").lower() == "true":
         SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Log to stdout so `docker logs` shows warnings and full tracebacks for 500s, also with DEBUG=false
+# (Django's default only emails them to ADMINS).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"plain": {"format": "{asctime} {levelname} {name}: {message}", "style": "{"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "plain"}},
+    "root": {"handlers": ["console"], "level": os.getenv("LOG_LEVEL", "INFO")},
+    "loggers": {"django": {"handlers": ["console"], "level": "WARNING", "propagate": False}},
+}
