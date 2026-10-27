@@ -1,5 +1,5 @@
 Django>=5.1,<5.3
 psycopg[binary]>=3.2
-stripe>=11.0
+stripe>=16,<17  # webhook code assumes v15+ objects (not dicts)
 gunicorn>=23.0
 whitenoise>=6.8

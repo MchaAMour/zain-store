@@ -68,8 +68,9 @@ def stripe_webhook(request):
     try:
         event = stripe.Webhook.construct_event(request.body, request.META.get("HTTP_STRIPE_SIGNATURE", ""), settings.STRIPE_WEBHOOK_SECRET)
     except (ValueError, stripe.error.SignatureVerificationError): return HttpResponseBadRequest("Invalid Stripe signature")
-    data = event.data.object
-    reference = data.get("metadata", {}).get("payment_reference") or data.get("client_reference_id")
+    event = event.to_dict()  # stripe>=15 objects are not dicts (no .get); use plain dicts from here on
+    data = event["data"]["object"]
+    reference = (data.get("metadata") or {}).get("payment_reference") or data.get("client_reference_id")
     if not reference: return HttpResponse(status=200)
     try: payment = Payment.objects.get(reference=reference, provider=Payment.Provider.STRIPE)
     except Payment.DoesNotExist: return HttpResponse(status=200)
@@ -78,5 +79,5 @@ def stripe_webhook(request):
         payment.provider_payment_id = payment_intent
         payment.save(update_fields=["provider_payment_id", "updated_at"])
     outcomes = {"checkout.session.completed": Payment.Status.SUCCEEDED, "checkout.session.async_payment_succeeded": Payment.Status.SUCCEEDED, "checkout.session.async_payment_failed": Payment.Status.FAILED, "checkout.session.expired": Payment.Status.FAILED}
-    if event.type in outcomes: ingest_provider_event("stripe", event.id, event.type, event.to_dict_recursive(), payment, outcomes[event.type])
+    if event["type"] in outcomes: ingest_provider_event("stripe", event["id"], event["type"], event, payment, outcomes[event["type"]])
     return HttpResponse(status=200)

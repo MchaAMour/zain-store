@@ -51,3 +51,38 @@ class PaymentWorkflowTests(TestCase):
         self.assertEqual(refund.status, "succeeded")
         self.assertEqual(payment.status, Payment.Status.REFUNDED)
         self.assertEqual(self.order.status, Order.Status.REFUNDED)
+
+@override_settings(STRIPE_SECRET_KEY="sk_test_x", STRIPE_WEBHOOK_SECRET="whsec_test")
+class StripeWebhookTests(TestCase):
+    """Payloads are signed with Stripe's real scheme and go through the real construct_event."""
+    def setUp(self):
+        user = get_user_model().objects.create_user("zain", password="safe-pass-123")
+        order = Order.objects.create(customer=user, total_cents=7990)
+        self.payment = get_or_create_payment(order)
+        record_checkout_session(self.payment, "cs_test_1")
+
+    def post_event(self, event_type, obj, event_id="evt_1"):
+        import hashlib, hmac, json, time
+        body = json.dumps({"id": event_id, "object": "event", "type": event_type, "data": {"object": obj}})
+        ts = int(time.time())
+        sig = hmac.new(b"whsec_test", f"{ts}.{body}".encode(), hashlib.sha256).hexdigest()
+        return self.client.post("/payments/stripe/webhook/", body, content_type="application/json", HTTP_STRIPE_SIGNATURE=f"t={ts},v1={sig}")
+
+    def test_completed_session_marks_payment_succeeded(self):
+        session = {"id": "cs_test_1", "object": "checkout.session", "metadata": {"payment_reference": str(self.payment.reference)}, "payment_intent": "pi_1"}
+        self.assertEqual(self.post_event("checkout.session.completed", session).status_code, 200)
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.Status.SUCCEEDED)
+        self.assertEqual(self.payment.provider_payment_id, "pi_1")
+        self.assertEqual(self.post_event("checkout.session.completed", session).status_code, 200)  # replay is harmless
+        self.assertEqual(ProviderEvent.objects.count(), 1)
+
+    def test_null_metadata_falls_back_to_client_reference_id(self):
+        session = {"id": "cs_test_1", "object": "checkout.session", "metadata": None, "client_reference_id": str(self.payment.reference)}
+        self.assertEqual(self.post_event("checkout.session.completed", session).status_code, 200)
+        self.payment.refresh_from_db()
+        self.assertEqual(self.payment.status, Payment.Status.SUCCEEDED)
+
+    def test_bad_signature_is_rejected(self):
+        r = self.client.post("/payments/stripe/webhook/", "{}", content_type="application/json", HTTP_STRIPE_SIGNATURE="t=1,v1=bad")
+        self.assertEqual(r.status_code, 400)
