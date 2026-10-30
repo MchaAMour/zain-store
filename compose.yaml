@@ -18,14 +18,16 @@ services:
     build: .
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8010"
     ports:
-      - "8010:8010"
-    # Keep credentials outside the repository. ../.env is the standard local
-    # configuration file; ../.env-stripe is an optional Stripe override file.
-    # Missing files are allowed so the built-in payment simulator runs locally.
+      - "127.0.0.1:8010:8010"
+    # Credentials stay out of Git: .env is ignored and takes precedence over the
+    # legacy ../.env and ../.env-stripe. Missing files are allowed so the built-in
+    # payment simulator runs locally.
     env_file:
       - path: ../.env
         required: false
       - path: ../.env-stripe
+        required: false
+      - path: .env
         required: false
     volumes:
       - .:/app

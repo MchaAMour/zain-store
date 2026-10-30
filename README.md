@@ -5,9 +5,8 @@ A Django payment demo. It uses PostgreSQL with Docker Compose, keeps all money i
 ## Run it
 
 ```bash
-# Put local settings in ../.env (one directory above this repository).
-# ../.env-stripe is also loaded when present and can hold Stripe test keys.
-# The required names are shown in .env.example; never commit either file.
+cp .env.example .env  # ignored by Git; edit for your local settings
+# Legacy ../.env and ../.env-stripe are also loaded; .env takes precedence.
 docker compose up --build
 docker compose exec zain-store-web python manage.py seed_catalog
 docker compose exec zain-store-web python manage.py createsuperuser
@@ -26,7 +25,7 @@ docker compose exec zain-store-web python manage.py test
 
 ## Stripe test mode (optional)
 
-Put a Stripe test secret key in `../.env` (or `../.env-stripe`):
+Put a Stripe test secret key in `.env`:
 
 ```env
 STRIPE_SECRET_KEY=sk_test_...

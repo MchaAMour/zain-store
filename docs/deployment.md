@@ -26,7 +26,8 @@ From your local computer, copy the source without secrets, Docker volumes, or Gi
 
 ```bash
 rsync -av --delete \
-  --exclude '.env' --exclude '.git' --exclude '.git-history' \
+  --include '.env.example' --include '.env.vps.example' \
+  --filter=':- .gitignore' --exclude '.git' \
   --exclude '__pycache__' --exclude 'staticfiles' \
   /path/to/zain-store/ \
   your-user@your-vps:/opt/zain-store/
